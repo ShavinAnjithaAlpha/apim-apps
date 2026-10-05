@@ -356,11 +356,12 @@ function Endpoints(props) {
      * @param {string} endpointImplementationType The api implementation type (INLINE/ ENDPOINT/ MOCKED_OAS).
      * @param {object} updatePayload The payload to send via updateAPI for INLINE/ MOCKED_OAS implementations.
      * @param {Function} onComplete Callback invoked once the update settles.
+     * @return {Promise} A promise that settles once the update and the completion callback have run.
      */
     const persistEndpointConfig = (endpointImplementationType, updatePayload, onComplete) => {
         if (endpointImplementationType === ENDPOINT_IMPLEMENTATION_TYPE_INLINE
             || endpointImplementationType === ENDPOINT_IMPLEMENTATION_TYPE_MOCKED_OAS) {
-            api.updateSwagger(swagger).then((resp) => {
+            return api.updateSwagger(swagger).then((resp) => {
                 setSwagger(resp.obj);
             }).then(() => updateAPI(updatePayload)
                 .catch((error) => {
@@ -383,7 +384,7 @@ function Endpoints(props) {
             if (apiObjectCopy.endpointConfig.endpoint_type === 'service') {
                 apiObjectCopy.endpointConfig.endpoint_type = 'http';
             }
-            updateAPI(apiObjectCopy)
+            return updateAPI(apiObjectCopy)
                 .catch((error) => {
                     if (error.response) {
                         Alert.error(error.response.body.description);
@@ -409,8 +410,8 @@ function Endpoints(props) {
         const sequenceBackendsUpdated = endpointConfig.endpoint_type === 'sequence_backend'
             ? updateSequenceBackends()
             : Promise.resolve();
-        sequenceBackendsUpdated.then(() => {
-            persistEndpointConfig(
+        sequenceBackendsUpdated
+            .then(() => persistEndpointConfig(
                 endpointImplementationType,
                 { endpointConfig, endpointImplementationType, serviceInfo },
                 () => {
@@ -419,8 +420,11 @@ function Endpoints(props) {
                         history.push('/apis/' + api.id + '/policies');
                     }
                 },
-            );
-        });
+            ))
+            .catch(() => {
+                setUpdating(false);
+                Alert.error('Error occurred while updating endpoint configurations');
+            });
     };
 
     const handleSaveAndDeploy = () => {
@@ -432,8 +436,8 @@ function Endpoints(props) {
         const sequenceBackendsUpdated = endpointConfig.endpoint_type === 'sequence_backend'
             ? updateSequenceBackends()
             : Promise.resolve();
-        sequenceBackendsUpdated.then(() => {
-            persistEndpointConfig(
+        sequenceBackendsUpdated
+            .then(() => persistEndpointConfig(
                 endpointImplementationType,
                 { endpointConfig, endpointImplementationType, endpointSecurity, serviceInfo },
                 () => history.push({
@@ -441,8 +445,11 @@ function Endpoints(props) {
                         : `/apis/${api.id}/deployments`,
                     state: 'deploy',
                 }),
-            );
-        });
+            ))
+            .catch(() => {
+                setUpdating(false);
+                Alert.error('Error occurred while updating endpoint configurations');
+            });
     };
 
     /**
