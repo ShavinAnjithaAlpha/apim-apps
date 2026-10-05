@@ -2402,7 +2402,7 @@ export default function Environments() {
         });
         const gatewayRevisions = deployingGateway?.revisions;
 
-        if (!gatewayRevisions.length) {
+        if (!gatewayRevisions || gatewayRevisions.length === 0) {
             // Content to display when there is no revision
             return (
                 <FormattedMessage
@@ -2573,7 +2573,7 @@ export default function Environments() {
         return undefined;
     }, [allEnvRevision, settings]);
 
-    if (!noEnv && (isLoading || selectedVhosts === null)) {
+    if (!noEnv && (isLoading || selectedVhosts === null || !allEnvRevision)) {
         return <Progress per={80} message='Loading app settings ...' />;
     }
 
